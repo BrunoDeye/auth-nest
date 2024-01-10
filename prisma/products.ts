@@ -1,0 +1,172 @@
+
+
+// 1 Micro
+// 2 String
+// 3 Hybrid
+
+import { Products, Prisma } from "@prisma/client";
+
+
+// export const productsData = [
+//   {
+//     model: "",
+//     categoryId: 1,
+//   },
+//   {
+//     model: "",
+//     categoryId: 2,
+//   },
+//   {
+//     model: "",
+//     categoryId: 3,
+//   },
+// ]
+
+const products = {
+  micro: [
+    'SUN300G3-US-220',
+  'SUN300G3-EU-230',
+  'SUN500G3-US-220',
+  'SUN500G3-EU-230',
+  'SUN600G2-US-220',
+  'SUN600G2-US-208/240',
+  'SUN600G2-US-127',
+  'SUN600G3-US-220',
+  'SUN600G3-EU-230',
+  'SUN800G3-EU-230',
+  'SUN800G3-US-221',
+  'SUN1000G3-EU-230',
+  'SUN1000G3-US-220',
+  'SUN1300G2-US-208/240',
+  'SUN1200G-230-EU',
+  'SUN-M220G4-EU-Q0',
+  'SUN1300G3-EU-230',
+  'SUN1300G3-US-220',
+  'SUN1600G3-EU-230',
+  'SUN1600G3-US-220',
+  'SUN1800G3-US-220',
+  'SUN1800G3-EU-230',
+  'SUN2000G3-US-220',
+  'SUN2000G3-EU-230',
+  'SUN500G-230-EU',
+  'SUN1000G3-US-221',
+  'SUN1300G'
+  ],
+  string: [
+    'SUN-3K-G',
+  'SUN-3.6K-G',
+  'SUN-4K-G',
+  'SUN-5K-G',
+  'SUN-6K-G',
+  'SUN-7.5K-G',
+  'SUN-8K-G',
+  'SUN-9K-G',
+  'SUN-10K-G',
+  'SUN-10K-G03',
+  'SUN-10.5K-G',
+  'SUN-12K-G',
+  'SUN-12K-G02',
+  'SUN-15K-G02',
+  'SUN-12K-G03',
+  'SUN-15K-G',
+  'SUN-15K-G03',
+  'SUN-18K-G03',
+  'SUN-18K-G',
+  'SUN-20K-G03',
+  'SUN-18K-G04',
+  'SUN-20K-G02',
+  'SUN-20K-G',
+  'SUN-25K-G',
+  'SUN-25K-G02',
+  'SUN-25K-G03',
+  'SUN-25K-G04',
+  'SUN-30K-G',
+  'SUN-30K-G02',
+  'SUN-30K-G03',
+  'SUN-33K-G',
+  'SUN-33K-G02',
+  'SUN-33K-G03',
+  'SUN-35K-G',
+  'SUN-35K-G02',
+  'SUN-35K-G03',
+  'SUN-40K-G',
+  'SUN-40K-G03',
+  'SUN-50K-G',
+  'SUN-50K-G02',
+  'SUN-50K-G03',
+  'SUN-60K-G',
+  'SUN-60K-G03',
+  'SUN-75K-G',
+  'SUN-75K-G03',
+  'SUN-75K-G05',
+  'SUN-80K-G',
+  'SUN-100K-G03',
+  'SUN-110K-G03',
+  'SUN-10K-G03-LV',
+  'SUN-12K-G02-LV',
+  'SUN-12K-G03-LV',
+  'SUN-15K-G02-LV',
+  'SUN-15K-G03-LV',
+  'SUN-20K-G02-LV',
+  'SUN-25K-G02-LV',
+  'SUN-30K-G02-LV',
+  'SUN-33K-G02-LV',
+  'SUN-35K-G02-LV',
+  'SUN-40K-G-LV',
+  'SUN-45K-G-LV',
+  'SUN-50K-G-LV',
+  'SUN-60K-G-LV',
+  'SUN-7K-G',
+  'SUN-35K-G-LV',
+  'SUN-1K-G',
+  'SUN-1.5K-G',
+  'SUN-5K-G03',
+  'SUN-2K-G',
+  'SUN-3K-G03',
+  'SUN-3K-HD'
+  ],
+  hybrid: [
+    "SUN-3K-SG04LP1-EU",
+    "SUN-3.6K-SG04LP1-EU",
+    "SUN-5K-SG04LP1-EU",
+    "SUN-6K-SG04LP1-EU",
+    "SUN-3.6K-SG03LP1-EU",
+    "SUN-5K-SG03LP1-EU",
+    "SUN-8K-SG03LP1-EU",
+    "SUN-5K-SG01LP1-US",
+    "SUN-6K-SG01LP1-US",
+    "SUN-7.6-SG01LP1-US",
+    "SUN-7.6K-SG01LP1-EU",
+    "SUN-8K-SG01LP1-US",
+    "SUN-8K-SG01LP1-EU",
+    "SUN-8K-SG03LP1-EU-ESS",
+    "SUN-5K-SG04LP3-EU",
+    "SUN-6K-SG04LP3-EU",
+    "SUN-8K-SG04LP3-EU",
+    "SUN-10K-SG04LP3-EU",
+    "SUN-12K-SG04LP3-EU",
+    "SUN-6K-SG01HP3-EU",
+    "SUN-8K-SG01HP3-EU",
+    "SUN-10K-SG01HP3-EU",
+    "SUN-12K-SG01HP3-EU",
+    "SUN-15K-SG01HP3-EU",
+    "SUN-20K-SG01HP3-EU",
+    "SUN-25K-SG01HP3-EU",
+    "SUN-30K-SG01HP3-EU",
+    "SUN-40K-SG01HP3-EU",
+    "SUN-50K-SG01HP3-EU",
+  ],
+};
+
+const productsData: Prisma.ProductsCreateManyInput[]  = [];
+
+Object.keys(products).forEach((category, categoryId) => {
+  products[category].forEach((model) => {
+    productsData.push({
+      model,
+      categoryId: categoryId + 1,
+    });
+  });
+});
+
+export default productsData;

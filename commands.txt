@@ -1,0 +1,3 @@
+npx prisma migrate diff --from-empty --to-schema-datamodel ./prisma/schema.prisma --script > script.sql
+
+nest g resource modules/<name> --no-spec

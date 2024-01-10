@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "TestType" ADD COLUMN     "code" INTEGER NOT NULL DEFAULT 10101;

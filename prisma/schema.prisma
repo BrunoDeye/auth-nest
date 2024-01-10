@@ -1,0 +1,539 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Campaign {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String
+  createdAt    DateTime @default(now())
+  startAt      DateTime
+  isActive     Boolean  @default(false)
+  finishAt     DateTime
+  targetGroups Groups[]
+  authorId     Int
+
+  participants CampaignParticipant[]
+}
+
+model CampaignParticipant {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  campaignId  Int
+  assets      String[]
+  points      Float
+  enroledDate DateTime @default(now())
+  isVerified  Boolean  @default(false)
+
+  user     User     @relation(fields: [userId], references: [id])
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+}
+
+enum Groups {
+  colaborator
+  integrator
+  distributor
+  client
+}
+
+enum Departments {
+  logistics
+  dispatch
+  maintenance
+  support
+  marketing
+}
+
+model Company {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  cnpj        String   @unique
+  email       String?  @unique
+  phone       String?
+  description String?
+  address     Address?
+  // affiliates  User[]
+
+  distributorWarranties WarrantyCompanies[] @relation("distributor")
+  // integratorWarranties  WarrantyCompanies[] @relation("integrator")
+}
+
+model Group {
+  id Int @id @default(autoincrement())
+
+  title       Groups       @default(integrator)
+  department  Departments?
+  description String?
+
+  users     User[]
+  tempAuths TempAuth[]
+}
+
+enum Roles {
+  USER
+  ADMIN
+  MANAGER
+}
+
+model TempAuth {
+  uuid                  String   @id @default(uuid())
+  responsibleEngineerId Int
+  groupId               Int?
+  createdAt             DateTime @default(now())
+  expirationDuration    Int      @default(360)
+  utilizations          Int      @default(1)
+
+  responsibleEngineer User   @relation(fields: [responsibleEngineerId], references: [id])
+  groupToRegister     Group? @relation(fields: [groupId], references: [id])
+}
+
+model User {
+  id          Int     @id @default(autoincrement())
+  // companyId   Int?
+  email       String  @unique
+  name        String
+  lastName    String
+  role        Roles   @default(USER)
+  verified    Boolean @default(false)
+  password    String
+  groupId     Int?
+  phoneNumber String? @db.VarChar(15)
+  cnpj        String?
+  cpf         String? @unique
+
+  openWarrantyToken String?
+
+  userUpdates UserUpdate[]
+  warranties  Warranty[]
+  campaigns   CampaignParticipant[]
+  address     Address[]
+
+  group          Group?     @relation(fields: [groupId], references: [id])
+  repairs        Repair[]   @relation(name: "repairTechnician")
+  // company        Company?   @relation(fields: [companyId], references: [id])
+  responsibleFor Warranty[] @relation(name: "responsibleEngineer")
+  tempAuth       TempAuth[]
+}
+
+model Address {
+  id           Int     @id @default(autoincrement())
+  userId       Int?
+  companyId    Int?    @unique
+  city         String
+  state        String
+  street       String
+  number       String
+  postalCode   String
+  complement   String?
+  neighborhood String
+
+  isPrimary Boolean @default(false)
+
+  title String?
+
+  user    User?    @relation(fields: [userId], references: [id])
+  company Company? @relation(fields: [companyId], references: [id])
+
+  addressesWarranty AddressesWarranty[]
+}
+
+enum Status {
+  WAITING_FOR_APPROVAL    @map("WAITING FOR APPROVAL")
+  INVERTER_TO_REPAIR      @map("INVERTER TO REPAIR")
+  INVERTER_TO_REPLACE     @map("INVERTER TO REPLACE")
+  INVERTER_CLOSED         @map("INVERTER CLOSED")
+  RETURN_BID              @map("RETURN BID")
+  INVERTER_REVERSE_PICKUP @map("INVERTER REVERSE PICKUP")
+  INVERTER_IN_TRANSPORT   @map("INVERTER IN TRANSPORT")
+  TOTAL_LOSS              @map("TOTAL LOSS")
+  INVERTER_RECEIVED       @map("INVERTER RECEIVED")
+  WAITING_BOARD           @map("WAITING BOARD")
+  MI_TO_REPAIR            @map("MI TO REPAIR")
+  ABANDONED_BY_CUSTOMER   @map("ABANDONED BY CUSTOMER")
+  INVERTER_RETURN         @map("INVERTER RETURN")
+  MI_TO_REPLACE           @map("MI TO REPLACE")
+  MI_IN_TRANSPORT         @map("MI IN TRANSPORT")
+  MI_RECEIVED             @map("MI RECEIVED")
+  MI_RETURN               @map("MI RETURN")
+  MI_CLOSED               @map("MI CLOSED")
+  ALDO_DEBT               @map("ALDO DEBT")
+  WITHOUT_IDENTIFICATION  @map("WITHOUT IDENTIFICATION")
+  BELENERGY_DEBT          @map("BELENERGY DEBT")
+  EDELTEC_DEBT            @map("EDELTEC DEBT")
+  SOOLLAR_DEBT            @map("SOOLLAR DEBT")
+  BONIFICACAO             @map("BONIFICAÇÃO")
+  DEMONSTRACAO            @map("DEMONSTRAÇÃO")
+}
+
+enum VisibleStatus {
+  WAITING_FOR_APPROVAL @map("Esperando aprovação")
+  APPROVED             @map("Aprovado")
+  ARRIVED_DEYE         @map("Recebido na Central Deye")
+  QUEUE_TO_REPAIR      @map("Na fila para o reparo")
+  CLOSED               @map("Finalizada")
+}
+
+model UserUpdate {
+  id          Int      @default(autoincrement())
+  warrantyId  Int
+  userId      Int
+  warranty    Warranty @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  description String
+
+  status        Status        @default(WAITING_FOR_APPROVAL)
+  visibleStatus VisibleStatus @default(WAITING_FOR_APPROVAL)
+  updatedAt     DateTime      @default(now())
+
+  @@id([id, warrantyId, userId])
+}
+
+enum WarrantyType {
+  FIX
+  REPLACE
+  COMPENSATION
+}
+
+enum Payer {
+  CUSTOMER
+  DEYE
+}
+
+enum Control {
+  CHECK
+  bel    @map("enviar para bel")
+  search @map("search inverter")
+}
+
+model Repair {
+  id                 Int      @id @default(autoincrement())
+  warrantyId         Int      @unique
+  repairDate         DateTime
+  repairTechnicianId Int
+  maintenanceControl Control?
+
+  warranty         Warranty       @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+  repairTechnician User           @relation(fields: [repairTechnicianId], references: [id], name: "repairTechnician")
+  waitingBoard     WaitingBoard[]
+}
+
+enum BoardStatus {
+  ARRIVED
+  WAITING
+}
+
+model WaitingBoard {
+  repairId  Int
+  boardId   Int
+  repair    Repair      @relation(fields: [repairId], references: [id])
+  board     Board       @relation(fields: [boardId], references: [id])
+  status    BoardStatus @default(WAITING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@id([repairId, boardId])
+}
+
+model Board {
+  id           Int            @id @default(autoincrement())
+  model        String
+  repairBoards WaitingBoard[]
+}
+
+enum Faults {
+  NOISE
+  COMMUNICATION
+  PHISICAL_DAMAGE     @map("PHISICAL DAMAGE")
+  COMM_ERROR          @map("COMM. ERROR")
+  AC_CONNECTOR        @map("AC CONNECTOR")
+  STANDBY_SELFCHECK   @map("STANDBY / SELFCHECK")
+  BAD_GENERATION      @map("BAD GENERATION")
+  DOESNT_TURN_ON      @map("DOESNT TURN ON")
+  DOESNT_GENERATES    @map("DOESNT GENERATES")
+  AC_IN_SHORT_CIRCUIT @map("AC IN SHORT CIRCUIT")
+  DOESNT_RECOGNIZE_AC @map("DOESNT RECOGNIZE AC")
+  FAN_FAULT           @map("FAN FAULT")
+  PV_IN_SHORT_CIRCUIT @map("PV IN SHORT CIRCUIT")
+  KNEADED
+  HEATING
+  LCD
+  PV1
+  PV3
+  PV2
+  F02
+  PV4
+  F01
+  MC4
+  F03
+  F04
+  F05
+  F06
+  F07
+  F08
+  F09
+  F10
+  F11
+  F12
+  F13
+  F14
+  F15
+  F16
+  F17
+  F18
+  F19
+  F20
+  F21
+  F22
+  F23
+  F24
+  F25
+  F26
+  F27
+  F28
+  F29
+  F30
+  F31
+  F32
+  F33
+  F34
+  F35
+  F36
+  F37
+  F38
+  F39
+  F40
+  F41
+  F42
+  F43
+  F44
+  F45
+  F46
+  F47
+  F48
+  F49
+  F50
+  F51
+  F52
+  F53
+  F54
+  F55
+  F56
+  F57
+  F58
+  F59
+  F60
+  F61
+  F62
+  F63
+  F64
+  OTHERS
+  LIMITATION
+}
+
+model Documentation {
+  id                    Int       @id @default(autoincrement())
+  warrantyId            Int       @unique
+  invoice               String?
+  sentBackup            Boolean   @default(false)
+  invoiceReturn         String?
+  returnDate            DateTime?
+  tracking              String?
+  separated             Boolean   @default(false)
+  receivingDate         DateTime?
+  requestSeparationDate DateTime?
+  daySentByCustomer     DateTime?
+
+  freight  Payer?
+  warranty Warranty @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+}
+
+enum AddressType {
+  REGISTRATION
+  PICKUP
+  DELIVERY
+}
+
+model AddressesWarranty {
+  addressId  Int
+  warrantyId Int
+  type       AddressType
+
+  warranty WarrantyRegistrationInfo @relation(fields: [warrantyId], references: [warrantyId], onDelete: Cascade)
+  address  Address                  @relation(fields: [addressId], references: [id], onDelete: Cascade)
+
+  @@id([warrantyId, type])
+}
+
+model WarrantyCompanies {
+  warrantyId    Int  @id
+  distributorId Int?
+  // integratorId  Int?
+
+  distributorPhoneNumber String? @db.VarChar(15)
+  integratorPhoneNumber  String? @db.VarChar(15)
+
+  integratorName  String?
+  distributorName String?
+
+  warranty    WarrantyRegistrationInfo @relation(fields: [warrantyId], references: [warrantyId], onDelete: Cascade)
+  distributor Company?                 @relation(fields: [distributorId], references: [id], name: "distributor")
+  // integrator  Company?                 @relation(fields: [integratorId], references: [id], name: "integrator")
+}
+
+model WarrantyRegistrationInfo {
+  warrantyId Int @id
+
+  name        String
+  email       String
+  phoneNumber String?
+
+  cpf  String?
+  cnpj String?
+
+  onSiteContact       String?
+  onSiteContactNumber String?
+
+  finalClientName   String?
+  finalClientNumber String?
+
+  addressesWarranty AddressesWarranty[]
+  warrantyCompanies WarrantyCompanies?
+
+  warranty Warranty? @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+}
+
+model Warranty {
+  id                    Int                @id @default(autoincrement())
+  usersUpdates          UserUpdate[]
+  productsWarranty      ProductsWarranty[]
+  authorId              Int
+  responsibleEngineerId Int?
+  caseOrigin            String?
+  createdAt             DateTime           @default(now())
+  approvalDate          DateTime?
+  reasonToDisapprove    String?
+  warrantyType          WarrantyType?
+  comments              String?
+  priority              Int?
+
+  repairInfo          Repair?
+  testList            TestList?
+  documentation       Documentation?
+  registration        WarrantyRegistrationInfo?
+  author              User                      @relation(fields: [authorId], references: [id], onDelete: NoAction)
+  responsibleEngineer User?                     @relation(fields: [responsibleEngineerId], references: [id], name: "responsibleEngineer", onDelete: NoAction)
+}
+
+model ProductsWarranty {
+  model        String
+  serialNumber String
+  warrantyId   Int
+
+  fault            Faults[]
+  faultDescription String
+
+  warranty Warranty @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+  product  Products @relation(fields: [model], references: [model], onDelete: NoAction, onUpdate: Cascade)
+
+  @@id([model, warrantyId, serialNumber])
+}
+
+model Products {
+  id         Int    @id @default(autoincrement())
+  model      String @unique
+  categoryId Int
+
+  category         Category           @relation(fields: [categoryId], references: [id])
+  productsWarranty ProductsWarranty[]
+  // battery    Battery? 
+  // micro      Micro?    
+  // inverter   Inverter? 
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String
+  products    Products[]
+  tests       TestType[]
+}
+
+enum TestStatus {
+  ANALYZING
+  APPROVED
+  FAILED
+}
+
+model TestList {
+  id                 Int     @id @default(autoincrement())
+  warrantyId         Int     @unique
+  failureDescription String?
+
+  tests    Test[]
+  warranty Warranty @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+}
+
+model Test {
+  id         Int          @id @default(autoincrement())
+  testListId Int
+  testTypeId Int          
+  assets     FileEntity[]
+  comments   String?
+  testStatus TestStatus   @default(ANALYZING)
+  testList   TestList     @relation(fields: [testListId], references: [id])
+  testType   TestType     @relation(fields: [testTypeId], references: [id])
+
+  @@unique([testListId, testTypeId])
+}
+
+model TestType {
+  id            Int     @id @default(autoincrement())
+  productTypeId Int
+  name          String
+  isOptional    Boolean 
+  description   String?
+  code          Int @unique
+  fault Faults[]
+
+  productType Category @relation(fields: [productTypeId], references: [id])
+
+  tests Test[]
+}
+
+model FileEntity {
+  id        Int      @id @default(autoincrement())
+  testId    Int
+  fileName  String
+  fileUrl   String
+  key       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  test      Test     @relation(fields: [testId], references: [id])
+}
+
+// model Battery {
+//   id Int @id @default(autoincrement())
+
+//   products Products? @relation(fields: [id], references: [id])
+// }
+
+// model Micro {
+//   id Int @id @default(autoincrement())
+
+//   products Products? @relation(fields: [id], references: [id])
+// }
+
+// model Inverter {
+//   id Int @id @default(autoincrement())
+
+//   products Products? @relation(fields: [id], references: [id])
+// }
